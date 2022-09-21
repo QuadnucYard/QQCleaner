@@ -51,7 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CollectionUtil.cs" />
-    <Compile Include="FileData.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -26,7 +26,7 @@ namespace QQCleaner {
 		public Form1() {
 			InitializeComponent();
 
-			lstUserDir.MouseDoubleClick += delegate (object sender, MouseEventArgs e) {
+			lstUserDir.MouseDoubleClick += (sender, e) => {
 				int index = lstUserDir.IndexFromPoint(e.Location);
 				if (index == ListBox.NoMatches) {
 					return;
@@ -57,8 +57,6 @@ namespace QQCleaner {
 					}
 				}
 			}
-
-			//count(userDirs[0].FullName);
 		}
 
 		/// <summary>
@@ -66,7 +64,6 @@ namespace QQCleaner {
 		/// </summary>
 		private void count(string dirname) {
 			statusLabel.Text = "正在扫描文件，请稍后……";
-
 
 			DateTime now = tScanStart = DateTime.Now;
 
@@ -79,26 +76,18 @@ namespace QQCleaner {
 			audioFiles = new DirectoryInfo(dirname + "\\Audio").GetFiles();
 			imageC2CFiles = new DirectoryInfo(dirname + "\\Image\\C2C").GetFiles();
 
-			// 获取群图片
-
-
 			plot(chartVideo, videoFiles);
 			plot(chartAudio, audioFiles);
 			plot(chartImageC2C, imageC2CFiles);
 
-			//BeginInvoke(new Action(hhh));
-
+			// 获取群图片
 			new Thread(() => {
 				imageGroup2Files = getFilesRecursively(new DirectoryInfo(dirname + "\\Image\\Group2")).ToArray();
-				BeginInvoke(new Action(hhh));
-				//plot(chartImageGroup2, imageGroup2Files);
+				BeginInvoke(new Action(() => {
+					plot(chartImageGroup2, imageGroup2Files);
+					statusLabel.Text = $"扫描完成！用时{(DateTime.Now - tScanStart).TotalSeconds}s";
+				}));
 			}).Start();
-
-			void hhh() {
-				//imageGroup2Files = getFilesRecursively(new DirectoryInfo(dirname + "\\Image\\Group2")).ToArray();
-				plot(chartImageGroup2, imageGroup2Files);
-				statusLabel.Text = $"扫描完成！用时{(DateTime.Now - tScanStart).TotalSeconds}s";
-			}
 		}
 
 		private List<FileInfo> getFilesRecursively(DirectoryInfo dir) {
@@ -177,20 +166,23 @@ namespace QQCleaner {
 			float s4 = c4.Sum(t => t.Length) * 1.0f / (1 << 20);
 			if (MessageBox.Show($"发现以下文件：\nAudio: {c1.Length}个 / {s1}MB\nVideo: {c2.Length}个 / {s2}MB\nImageC2C: {c3.Length}个 / {s3}MB\nImageGroup2: {c4.Length}个 / {s4}MB",
 				"确定删除？", MessageBoxButtons.YesNo) == DialogResult.Yes) {
-				c1.ForEach(t => t.Delete());
-				c2.ForEach(t => t.Delete());
-				c3.ForEach(t => t.Delete());
-				c4.ForEach(t => t.Delete());
-				statusLabel.Text = "正在清理空文件夹……";
 				new Thread(() => {
-					cleanFolders(new DirectoryInfo(currentUserDir.FullName + "\\Image\\Group2"));
+					c1.ForEach(t => t.Delete());
+					c2.ForEach(t => t.Delete());
+					c3.ForEach(t => t.Delete());
+					c4.ForEach(t => t.Delete());
+					BeginInvoke(new Action(() => {
+						statusLabel.Text = "正在清理空文件夹……";
+						new Thread(() => {
+							cleanFolders(new DirectoryInfo(currentUserDir.FullName + "\\Image\\Group2"));
+						}).Start();
+					}));
 				}).Start();
-				
 			}
 		}
 
 		private void cleanFolders(DirectoryInfo dir) {
-			
+
 			Stack<DirectoryInfo> stack = new Stack<DirectoryInfo>();
 			stack.Push(dir);
 			while (stack.Count > 0) {
@@ -203,12 +195,10 @@ namespace QQCleaner {
 					}
 				}
 			}
-			BeginInvoke(new Action(fff));
-
-			void fff() {
+			BeginInvoke(new Action(() => {
 				statusLabel.Text = "空文件夹清理完成……";
 				MessageBox.Show("终于清理完成了！", "清理完成", MessageBoxButtons.OK);
-			}
+			}));
 		}
 	}
 }
